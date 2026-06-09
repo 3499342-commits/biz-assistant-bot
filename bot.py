@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 TOKEN = os.getenv("BOT_TOKEN")
-TZ = ZoneInfo(os.getenv("TIMEZONE", "Europe/Kyiv"))
+TZ = ZoneInfo(os.getenv("TIMEZONE", "Europe/Moscow"))
 
 API_URL = f"https://api.telegram.org/bot{TOKEN}"
 TASKS_FILE = "tasks.json"
@@ -16,7 +16,7 @@ def load_tasks():
     try:
         with open(TASKS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return {}
 
 
@@ -54,7 +54,7 @@ def parse_reminder(text):
 
     try:
         hour, minute = map(int, possible_time.split(":"))
-    except:
+    except Exception:
         return text, None
 
     if "сегодня" in lower:
@@ -67,7 +67,12 @@ def parse_reminder(text):
         return text, None
 
     reminder_time = datetime(
-        date.year, date.month, date.day, hour, minute, tzinfo=TZ
+        date.year,
+        date.month,
+        date.day,
+        hour,
+        minute,
+        tzinfo=TZ
     )
 
     return clean_text, reminder_time.isoformat()
@@ -78,10 +83,7 @@ def check_reminders(tasks):
 
     for chat_id, user_tasks in tasks.items():
         for task in user_tasks:
-            if task.get("done"):
-                continue
-
-            if task.get("reminded"):
+            if task.get("done") or task.get("reminded"):
                 continue
 
             reminder_at = task.get("reminder_at")
@@ -90,10 +92,14 @@ def check_reminders(tasks):
 
             try:
                 reminder_time = datetime.fromisoformat(reminder_at)
-            except:
+
+                if reminder_time.tzinfo is None:
+                    reminder_time = reminder_time.replace(tzinfo=TZ)
+
+            except Exception:
                 continue
 
-            if now >= reminder_time:
+            if now.timestamp() >= reminder_time.timestamp():
                 send_message(
                     chat_id,
                     f"🔔 Напоминание:\n{task['text']}"
@@ -173,15 +179,19 @@ def main():
                             f"🔔 Напомню: {reminder_time.strftime('%d.%m.%Y %H:%M')}"
                         )
                     else:
-                        send_message(chat_id, f"✅ Задача добавлена:\n{task_text}")
+                        send_message(
+                            chat_id,
+                            f"✅ Задача добавлена:\n{task_text}"
+                        )
 
                 elif text == "/tasks":
                     if not user_tasks:
                         send_message(chat_id, "📭 У тебя пока нет задач.")
                     else:
                         result = "📋 Твои задачи:\n\n"
+
                         for i, task in enumerate(user_tasks, start=1):
-                            status = "✅" if task["done"] else "⬜"
+                            status = "✅" if task.get("done") else "⬜"
                             reminder = ""
 
                             if task.get("reminder_at"):
@@ -205,7 +215,7 @@ def main():
                             )
                         else:
                             send_message(chat_id, "Такой задачи нет.")
-                    except:
+                    except Exception:
                         send_message(chat_id, "Напиши так:\n/done 1")
 
                 elif text.startswith("/delete "):
@@ -221,12 +231,12 @@ def main():
                             )
                         else:
                             send_message(chat_id, "Такой задачи нет.")
-                    except:
+                    except Exception:
                         send_message(chat_id, "Напиши так:\n/delete 1")
 
                 elif text == "/report":
                     total = len(user_tasks)
-                    done = len([t for t in user_tasks if t["done"]])
+                    done = len([t for t in user_tasks if t.get("done")])
                     active = total - done
 
                     send_message(
