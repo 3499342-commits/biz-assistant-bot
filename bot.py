@@ -90,6 +90,64 @@ def check_reminders(data):
     current = now()
     changed = False
 
+    def biz_agent(chat_id, data):
+    tasks = user_bucket(data, "tasks", chat_id, [])
+    notes = user_bucket(data, "notes", chat_id, [])
+    clients = user_bucket(data, "clients", chat_id, [])
+    finance = user_bucket(data, "finance", chat_id, [])
+
+    total_tasks = len(tasks)
+    done_tasks = len([t for t in tasks if t.get("done")])
+    active_tasks = total_tasks - done_tasks
+
+    income = sum(
+        item["amount"]
+        for item in finance
+        if item["type"] == "income"
+    )
+
+    spent = sum(
+        item["amount"]
+        for item in finance
+        if item["type"] == "spent"
+    )
+
+    balance = income - spent
+
+    deals_count = 0
+    deals_sum = 0
+
+    for client in clients:
+        deals = client.get("deals", [])
+        deals_count += len(deals)
+
+        for deal in deals:
+            deals_sum += deal.get("amount", 0)
+
+    report = (
+        "📊 Biz Director\n\n"
+        f"📋 Задачи: {total_tasks}\n"
+        f"✅ Выполнено: {done_tasks}\n"
+        f"⏳ Осталось: {active_tasks}\n\n"
+        f"👥 Клиентов: {len(clients)}\n"
+        f"💼 Сделок: {deals_count}\n"
+        f"💰 Сумма сделок: {deals_sum}\n\n"
+        f"📈 Доходы: {income}\n"
+        f"📉 Расходы: {spent}\n"
+        f"💵 Баланс: {balance}\n\n"
+    )
+
+    if active_tasks > 0:
+        report += "👉 Сегодня сначала закрой активные задачи.\n"
+
+    if len(clients) == 0:
+        report += "👉 Добавь новых клиентов в CRM.\n"
+
+    if balance < 0:
+        report += "👉 Расходы превышают доходы.\n"
+
+    return report
+
     for chat_id, tasks in data.get("tasks", {}).items():
         for task in tasks:
             if task.get("done") or task.get("reminded"):
@@ -111,7 +169,72 @@ def check_reminders(data):
 
     if changed:
         save_data(data)
+def biz_agent(chat_id, data):
+    tasks = user_bucket(data, "tasks", chat_id, [])
+    notes = user_bucket(data, "notes", chat_id, [])
+    clients = user_bucket(data, "clients", chat_id, [])
+    finance = user_bucket(data, "finance", chat_id, [])
 
+    total_tasks = len(tasks)
+    done_tasks = len([t for t in tasks if t.get("done")])
+    active_tasks = total_tasks - done_tasks
+
+    income = sum(item["amount"] for item in finance if item["type"] == "income")
+    spent = sum(item["amount"] for item in finance if item["type"] == "spent")
+    balance = income - spent
+
+    deals_count = 0
+    deals_sum = 0
+
+    for client in clients:
+        deals = client.get("deals", [])
+        deals_count += len(deals)
+
+        for deal in deals:
+            deals_sum += deal.get("amount", 0)
+
+    report = (
+        "📊 Biz Director\n\n"
+        "✅ Задачи:\n"
+        f"Всего: {total_tasks}\n"
+        f"Выполнено: {done_tasks}\n"
+        f"Осталось: {active_tasks}\n\n"
+        "👥 CRM:\n"
+        f"Клиентов: {len(clients)}\n"
+        f"Сделок: {deals_count}\n"
+        f"Сумма сделок: {deals_sum}\n\n"
+        "💰 Финансы:\n"
+        f"Доходы: {income}\n"
+        f"Расходы: {spent}\n"
+        f"Баланс: {balance}\n\n"
+        "📌 Рекомендации:\n"
+    )
+
+    if active_tasks > 0:
+        report += "1. Сначала закрой активные задачи.\n"
+    else:
+        report += "1. Активных задач нет — добавь приоритет на сегодня.\n"
+
+    if len(clients) == 0:
+        report += "2. Добавь первых клиентов в CRM.\n"
+    elif deals_count == 0:
+        report += "2. Добавь сделки по текущим клиентам.\n"
+    else:
+        report += "2. Проверь клиентов со сделками и доведи их до оплаты.\n"
+
+    if balance < 0:
+        report += "3. Расходы выше доходов — сократи ненужные траты.\n"
+    elif income == 0:
+        report += "3. Добавь доходы или план продаж.\n"
+    else:
+        report += "3. Финансовая ситуация положительная — усиливай продажи.\n"
+
+    if notes:
+        report += "4. Просмотри последние заметки и преврати идеи в задачи.\n"
+    else:
+        report += "4. Добавь заметки с идеями, клиентами или планами.\n"
+
+    return report
 
 def ask_gpt(chat_id, prompt, data):
     if not OPENAI_API_KEY:
@@ -163,10 +286,11 @@ def ask_gpt(chat_id, prompt, data):
 
 def help_text():
     return (
-        "👋 Biz Assistant v1.2\n\n"
+        "👋 Biz Assistant v1.3\n\n"
         "Команды:\n\n"
         "🧠 ChatGPT:\n"
-        "/ask вопрос — спросить ChatGPT\n\n"
+        "/ask вопрос — спросить ChatGPT\n"
+        "/agent — Biz Director анализ\n\n"
         "✅ Задачи:\n"
         "/add текст задачи — добавить задачу\n"
         "/add задача сегодня 18:00 — задача с напоминанием\n"
@@ -290,7 +414,12 @@ def main():
                     except Exception:
                         send_message(chat_id, "Напиши так:\n/delete 1")
 
-                elif text == "/report":
+               elif text == "/agent":
+    send_message(chat_id, "📊 Анализирую твои данные...")
+    result = biz_agent(chat_id, data)
+    send_message(chat_id, result)
+
+elif text == "/report":
                     total = len(tasks)
                     done = len([t for t in tasks if t["done"]])
                     active = total - done
