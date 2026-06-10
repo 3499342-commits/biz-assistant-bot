@@ -230,6 +230,12 @@ def biz_agent(chat_id, data):
     done_tasks = len([task for task in tasks if task.get("done")])
     active_tasks = total_tasks - done_tasks
 
+    active_task_list = [
+        task.get("text", "")
+        for task in tasks
+        if not task.get("done")
+    ]
+
     income = sum(
         item.get("amount", 0)
         for item in finance
@@ -250,89 +256,78 @@ def biz_agent(chat_id, data):
     for client in clients:
         deals = client.get("deals", [])
         deals_count += len(deals)
+        deals_sum += sum(deal.get("amount", 0) for deal in deals)
 
-        for deal in deals:
-            deals_sum += deal.get("amount", 0)
+    report = "📊 Biz Director\n\n"
 
-    basic_report = (
-        "📊 Biz Director\n\n"
-        "✅ Задачи:\n"
-        f"Всего: {total_tasks}\n"
-        f"Выполнено: {done_tasks}\n"
-        f"Осталось: {active_tasks}\n\n"
-        "👥 CRM:\n"
-        f"Клиентов: {len(clients)}\n"
-        f"Сделок: {deals_count}\n"
-        f"Сумма сделок: {deals_sum}\n\n"
-        "💰 Финансы:\n"
-        f"Доходы: {income}\n"
-        f"Расходы: {spent}\n"
-        f"Баланс: {balance}\n\n"
-        "📌 Рекомендации:\n"
-    )
+    report += "✅ Задачи:\n"
+    report += f"Всего: {total_tasks}\n"
+    report += f"Выполнено: {done_tasks}\n"
+    report += f"Осталось: {active_tasks}\n\n"
+
+    report += "👥 CRM:\n"
+    report += f"Клиентов: {len(clients)}\n"
+    report += f"Сделок: {deals_count}\n"
+    report += f"Сумма сделок: {deals_sum}\n\n"
+
+    report += "💰 Финансы:\n"
+    report += f"Доходы: {income}\n"
+    report += f"Расходы: {spent}\n"
+    report += f"Баланс: {balance}\n\n"
+
+    report += "🎯 Главный фокус:\n"
 
     if active_tasks > 0:
-        basic_report += "1. Сначала закрой активные задачи.\n"
+        report += f"Закрой первую активную задачу: {active_task_list[0]}\n\n"
+    elif len(clients) == 0:
+        report += "Добавь первых клиентов в CRM.\n\n"
+    elif deals_count == 0:
+        report += "Добавь сделки по клиентам.\n\n"
     else:
-        basic_report += "1. Активных задач нет — добавь главный фокус на сегодня.\n"
+        report += "Усиль продажи и доведи сделки до оплаты.\n\n"
+
+    report += "📌 Рекомендации:\n"
+
+    if active_tasks == 0:
+        report += "1. Добавь 1 главную задачу на сегодня.\n"
+    elif active_tasks <= 3:
+        report += "1. У тебя нормальная нагрузка — закрой задачи по порядку.\n"
+    else:
+        report += "1. Задач много — выбери 3 самые важные.\n"
 
     if len(clients) == 0:
-        basic_report += "2. Добавь первых клиентов в CRM.\n"
+        report += "2. Добавь клиентов командой /client Имя.\n"
     elif deals_count == 0:
-        basic_report += "2. Добавь сделки по текущим клиентам.\n"
+        report += "2. Добавь сделки командой /deal Имя сумма описание.\n"
     else:
-        basic_report += "2. Проверь клиентов со сделками и доведи их до оплаты.\n"
+        report += "2. Проверь клиентов и сделай следующий контакт.\n"
 
-    if balance < 0:
-        basic_report += "3. Расходы выше доходов — сократи ненужные траты.\n"
+    if income == 0:
+        report += "3. Запиши доход или поставь цель по продажам.\n"
+    elif balance < 0:
+        report += "3. Расходы выше доходов — сократи лишнее.\n"
+    else:
+        report += "3. Баланс положительный — продолжай фиксировать деньги.\n"
+
+    if len(notes) > 0:
+        report += "4. Проверь заметки и преврати важные идеи в задачи.\n"
+    else:
+        report += "4. Добавь идеи или планы через /note.\n"
+
+    report += "\n🚀 Следующий шаг:\n"
+
+    if active_tasks > 0:
+        report += f"Сейчас сделай: {active_task_list[0]}"
+    elif len(clients) == 0:
+        report += "Напиши: /client Иван"
+    elif deals_count == 0:
+        report += "Напиши: /deal Иван 500 консультация"
     elif income == 0:
-        basic_report += "3. Добавь доходы или план продаж.\n"
+        report += "Напиши: /income 1000 клиент"
     else:
-        basic_report += "3. Финансовая ситуация положительная — усиливай продажи.\n"
+        report += "Напиши клиенту и продвинь сделку к оплате."
 
-    if not OPENAI_API_KEY:
-        return basic_report
-
-    tasks_text = "\n".join([
-        f"- {'✅' if task.get('done') else '⬜'} {task.get('text')}"
-        for task in tasks[-15:]
-    ])
-
-    notes_text = "\n".join([
-        f"- {note.get('text')}"
-        for note in notes[-15:]
-    ])
-
-    clients_text = ""
-
-    for client in clients[-15:]:
-        deals = client.get("deals", [])
-        client_sum = sum(deal.get("amount", 0) for deal in deals)
-
-        clients_text += (
-            f"- {client.get('name')} | "
-            f"сделок: {len(deals)} | "
-            f"сумма: {client_sum}\n"
-        )
-
-    prompt = (
-        "Ты бизнес-директор и личный стратег предпринимателя.\n"
-        "Проанализируй данные и дай конкретный план действий.\n"
-        "Пиши кратко, по делу, на русском языке.\n\n"
-        f"ЗАДАЧИ:\n{tasks_text or 'Нет задач'}\n\n"
-        f"ЗАМЕТКИ:\n{notes_text or 'Нет заметок'}\n\n"
-        f"КЛИЕНТЫ:\n{clients_text or 'Нет клиентов'}\n\n"
-        f"ФИНАНСЫ:\nДоходы: {income}\nРасходы: {spent}\nБаланс: {balance}\n\n"
-        "Ответ дай в формате:\n"
-        "📊 Biz Director\n\n"
-        "1. Главный фокус\n"
-        "2. Что сделать по задачам\n"
-        "3. Что сделать по клиентам\n"
-        "4. Финансовая рекомендация\n"
-        "5. Следующий лучший шаг"
-    )
-
-    return ask_gpt(chat_id, prompt, data)
+    return report
 def help_text():
     return (
         "👋 Biz Assistant v1.4\n\n"
