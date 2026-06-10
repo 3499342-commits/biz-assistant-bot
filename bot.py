@@ -460,9 +460,7 @@ def main():
                 elif text == "📊 Biz Director" or text == "/agent":
                     send_message(chat_id, "📊 Анализирую твои данные...")
                     result = biz_agent(chat_id, data)
-                    send_message(chat_id, result)
-
-                elif text.startswith("/ask "):
+                    send_message(chat_id,                 elif text.startswith("/ask "):
                     prompt = text.replace("/ask ", "", 1).strip()
 
                     if not prompt:
@@ -472,7 +470,8 @@ def main():
                     send_message(chat_id, "🧠 Думаю...")
                     answer = ask_gpt(chat_id, prompt, data)
                     send_message(chat_id, answer)
-                                  elif text.startswith("/add "):
+
+                elif text.startswith("/add "):
                     task_raw = text.replace("/add ", "", 1).strip()
 
                     if not task_raw:
@@ -489,9 +488,7 @@ def main():
                         "reminded": False
                     })
 
-                    save_data(data)
-
-                    if reminder_at:
+                    save_data(data)   if reminder_at:
                         reminder_time = datetime.fromisoformat(reminder_at)
 
                         send_message(
