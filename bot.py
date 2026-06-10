@@ -713,6 +713,7 @@ def main():
                     result = "📊 Воронка продаж\n\n"
 
                     groups = {}
+                    sums = {}
 
                     for client in clients:
                         status = client.get("status", "Новый")
@@ -721,19 +722,24 @@ def main():
                             groups[status] = []
 
                         groups[status].append(client["name"])
+                        client_sum = sum(
+                            deal.get("amount", 0)
+                            for deal in client.get("deals", [])
+                        )
 
-                    total_clients = len(clients)
+                        sums[status] = sums.get(status, 0) + client_sum
+                        total_clients = len(clients)
 
                     result += f"👥 Всего клиентов: {total_clients}\n\n"
 
                     for status, names in groups.items():
-                        result += f"📌 {status} ({len(names)})\n"
+                        result += f"📌 {status} ({len(names)}) — {sums.get(status, 0):.0f} ₽\n"
 
                         for name in names:
                             result += f"• {name}\n"
 
                         result += "\n"
-
+                        
                     send_message(chat_id, result)
                 elif text.startswith("/deal "):  
                     raw = text.replace("/deal ", "", 1).strip()
