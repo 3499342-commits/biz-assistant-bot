@@ -453,7 +453,7 @@ def main():
                         "Как найти клиентов для Telegram-ботов?"
                     )
                 elif text == "📈 Dashboard":
-                    send_message(chat_id, "Напиши команду /dashboard")
+                    text = "/dashboard"
                     
                 elif text == "📊 Biz Director" or text == "/agent":
                     send_message(chat_id, "📊 Анализирую твои данные...")
