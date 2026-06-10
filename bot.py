@@ -91,10 +91,10 @@ def check_reminders(data):
     changed = False
 
     def biz_agent(chat_id, data):
-    tasks = user_bucket(data, "tasks", chat_id, [])
-    notes = user_bucket(data, "notes", chat_id, [])
-    clients = user_bucket(data, "clients", chat_id, [])
-    finance = user_bucket(data, "finance", chat_id, [])
+        tasks = user_bucket(data, "tasks", chat_id, [])
+        notes = user_bucket(data, "notes", chat_id, [])
+        clients = user_bucket(data, "clients", chat_id, [])
+        finance = user_bucket(data, "finance", chat_id, [])
 
     total_tasks = len(tasks)
     done_tasks = len([t for t in tasks if t.get("done")])
