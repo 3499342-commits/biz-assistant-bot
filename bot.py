@@ -155,7 +155,7 @@ def check_reminders(data):
     if changed:
         save_data(data)
 
-      def ask_gpt(chat_id, prompt, data):
+def ask_gpt(chat_id, prompt, data):
     if not OPENAI_API_KEY:
         return (
             "❌ OPENAI_API_KEY не добавлен в Railway Variables.\n\n"
