@@ -704,13 +704,13 @@ def main():
                         save_data(data)
                         send_message(chat_id, f"✅ Статус клиента обновлен:\n{name} → {status}")
                     else:
-                        send_message(chat_id, "Клиент не найден.")
-                elif text == "/pipeline":
+                        send_message(chat_id, "Клиент не                 elif text == "/pipeline":
                     if not clients:
-                        send_message(chat_id, "📭 Клиентов пока нет.")
+                        send_message(chat_id, "👥 Клиентов пока нет.")
                         continue
 
                     result = "📊 Воронка продаж\n\n"
+
                     groups = {}
 
                     for client in clients:
@@ -721,6 +721,10 @@ def main():
 
                         groups[status].append(client["name"])
 
+                    total_clients = len(clients)
+
+                    result += f"👥 Всего клиентов: {total_clients}\n\n"
+
                     for status, names in groups.items():
                         result += f"📌 {status} ({len(names)})\n"
 
@@ -730,7 +734,6 @@ def main():
                         result += "\n"
 
                     send_message(chat_id, result)
-                elif text.startswith("/deal "):
                     raw = text.replace("/deal ", "", 1).strip()
                     parts = raw.split()
 
