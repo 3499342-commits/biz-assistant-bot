@@ -733,7 +733,7 @@ def main():
                     result += f"👥 Всего клиентов: {total_clients}\n\n"
 
                     for status, names in groups.items():
-                        result += f"📌 {status} ({len(names)}) — {sums.get(status, 0):.0f} ₽\n"
+                        result += f"📌 {status} ({len(names)}) — {sums.get(status, 0):.0f}\n"
 
                         for name in names:
                             result += f"• {name}\n"
@@ -745,7 +745,7 @@ def main():
                             for deal in client.get("deals", [])
                         )
 
-                        result += f"\n💰 Общий потенциал: {total_sum:.0f} ₽"
+                        result += f"\n💰 Общий потенциал: {total_sum:.0f}"
                         send_message(chat_id, result)
                 elif text.startswith("/deal "):  
                     raw = text.replace("/deal ", "", 1).strip()
