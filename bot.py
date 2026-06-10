@@ -638,6 +638,31 @@ def main():
                             )
 
                         send_message(chat_id, result)
+                elif text.startswith("/status "):
+    raw = text.replace("/status ", "", 1).strip()
+
+    parts = raw.split(maxsplit=1)
+
+    if len(parts) < 2:
+        send_message(chat_id, "Напиши так:\n/status Иван Оплатил")
+        continue
+
+    name = parts[0]
+    status = parts[1]
+
+    found = False
+
+    for client in clients:
+        if client["name"].lower() == name.lower():
+            client["status"] = status
+            found = True
+            break
+
+    if found:
+        save_data(data)
+        send_message(chat_id, f"✅ Статус клиента обновлен:\n{name} → {status}")
+    else:
+        send_message(chat_id, "Клиент не найден.")
 
                 elif text.startswith("/deal "):
                     raw = text.replace("/deal ", "", 1).strip()
