@@ -663,7 +663,31 @@ def main():
                         send_message(chat_id, f"✅ Статус клиента обновлен:\n{name} → {status}")
                     else:
                         send_message(chat_id, "Клиент не найден.")
+                elif text == "/pipeline":
+                    if not clients:
+                        send_message(chat_id, "📭 Клиентов пока нет.")
+                        continue
 
+                    result = "📊 Воронка продаж\n\n"
+                    groups = {}
+
+                    for client in clients:
+                        status = client.get("status", "Новый")
+
+                        if status not in groups:
+                            groups[status] = []
+
+                        groups[status].append(client["name"])
+
+                    for status, names in groups.items():
+                        result += f"📌 {status} ({len(names)})\n"
+
+                        for name in names:
+                            result += f"• {name}\n"
+
+                        result += "\n"
+
+                    send_message(chat_id, result)
                 elif text.startswith("/deal "):
                     raw = text.replace("/deal ", "", 1).strip()
                     parts = raw.split()
