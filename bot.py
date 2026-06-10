@@ -739,8 +739,14 @@ def main():
                             result += f"• {name}\n"
 
                         result += "\n"
-                        
-                    send_message(chat_id, result)
+                        total_sum = sum(
+                            deal.get("amount", 0)
+                            for client in clients
+                            for deal in client.get("deals", [])
+                        )
+
+                        result += f"\n💰 Общий потенциал: {total_sum:.0f} ₽"
+                        send_message(chat_id, result)
                 elif text.startswith("/deal "):  
                     raw = text.replace("/deal ", "", 1).strip()
                     parts = raw.split()
