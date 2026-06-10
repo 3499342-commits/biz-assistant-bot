@@ -808,7 +808,57 @@ def main():
                         f"Расходы: {spent}\n"
                         f"Баланс: {balance}"
                     )
+                elif text == "/dashboard":
+                    total_tasks = len(tasks)
+                    done_tasks = len([t for t in tasks if t.get("done")])
+                    active_tasks = total_tasks - done_tasks
 
+                    total_clients = len(clients)
+
+                    deals_count = 0
+                    deals_sum = 0
+
+                    for client in clients:
+                        client_deals = client.get("deals", [])
+                        deals_count += len(client_deals)
+                        deals_sum += sum(deal.get("amount", 0) for deal in client_deals)
+
+                    income = sum(
+                        item.get("amount", 0)
+                        for item in finance
+                        if item.get("type") == "income"
+                    )
+
+                    spent = sum(
+                        item.get("amount", 0)
+                        for item in finance
+                        if item.get("type") == "spent"
+                    )
+
+                    balance = income - spent
+
+                    next_task = "Нет активных задач"
+
+                    for task in tasks:
+                        if not task.get("done"):
+                            next_task = task.get("text", "Без названия")
+                            break
+
+                    result = (
+                        "📈 Biz Dashboard\n\n"
+                        f"📋 Задачи: {total_tasks}\n"
+                        f"✅ Выполнено: {done_tasks}\n"
+                        f"🔥 Активные: {active_tasks}\n\n"
+                        f"👥 Клиенты: {total_clients}\n"
+                        f"🤝 Сделки: {deals_count}\n"
+                        f"💼 Потенциал сделок: {deals_sum}\n\n"
+                        f"💵 Доходы: {income}\n"
+                        f"📉 Расходы: {spent}\n"
+                        f"🏦 Баланс: {balance}\n\n"
+                        f"🎯 Главный фокус:\n{next_task}"
+                    )
+
+                    send_message(chat_id, result)
                 else:
                     send_message(chat_id, "🧠 Думаю...")
                     answer = ask_gpt(chat_id, text, data)
