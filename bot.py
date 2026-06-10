@@ -606,17 +606,12 @@ def main():
                         if 1 <= number <= len(notes):
                             deleted = notes.pop(number - 1)
                             save_data(data)
-
-                            send_message(
-                                chat_id,
-                                f"🗑 Заметка удалена:\n{deleted['text']}"
-                            )
+                            send_message(chat_id, f"🗑 Заметка удалена:\n{deleted['text']}")
                         else:
                             send_message(chat_id, "Такой заметки нет.")
-
                     except Exception:
                         send_message(chat_id, "Напиши так:\n/delnote 1")
-                                      elif text.startswith("/client "):
+                elif text.startswith("/client "):
                     name = text.replace("/client ", "", 1).strip()
 
                     if not name:
