@@ -704,7 +704,8 @@ def main():
                         save_data(data)
                         send_message(chat_id, f"✅ Статус клиента обновлен:\n{name} → {status}")
                     else:
-                        send_message(chat_id, "Клиент не                 elif text == "/pipeline":
+                        send_message(chat_id, "Клиент не найден.")               
+                elif text == "/pipeline":
                     if not clients:
                         send_message(chat_id, "👥 Клиентов пока нет.")
                         continue
@@ -734,6 +735,7 @@ def main():
                         result += "\n"
 
                     send_message(chat_id, result)
+                elif text.startswith("/deal "):  
                     raw = text.replace("/deal ", "", 1).strip()
                     parts = raw.split()
 
